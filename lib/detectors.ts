@@ -169,37 +169,44 @@ function detectCard(text: string): RawMatch[] {
 function detectApiKey(text: string): RawMatch[] {
   const results: RawMatch[] = [];
 
-  // Named patterns
+  // Named patterns — loosened to minimum-length matches
   const namedPatterns: RegExp[] = [
-    /AIza[0-9A-Za-z\-_]{35}/g,                          // Google API key
-    /sk-[A-Za-z0-9]{20,}/g,                              // OpenAI / generic sk-
-    /ghp_[A-Za-z0-9]{36}/g,                              // GitHub PAT
-    /AKIA[0-9A-Z]{16}/g,                                 // AWS access key
-    /sb_secret_[A-Za-z0-9]{30,}/g,                       // Supabase secret
-    /eyJ[A-Za-z0-9\-_]+\.eyJ[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_.+/=]+/g,  // JWT
+    /AIza[0-9A-Za-z_\-]{20,}/g,          // Google API key
+    /sk-[A-Za-z0-9_\-]{20,}/g,           // OpenAI / generic sk-
+    /ghp_[A-Za-z0-9]{20,}/g,             // GitHub PAT
+    /AKIA[0-9A-Z]{16}/g,                 // AWS access key (exact — always 20 chars total)
+    /sb_secret_[A-Za-z0-9_\-]{10,}/g,   // Supabase secret
+    /eyJ[A-Za-z0-9\-_]+\.eyJ[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_.+/=]+/g, // JWT
   ];
 
   for (const re of namedPatterns) {
     results.push(...findAll(text, re, "api_key", "critical"));
   }
 
-  // Generic: key/token/secret = <long-value>
+  // Generic label-colon/equals-value pattern.
+  // Match the label part (api_key, token, secret, …) followed by optional
+  // filler text then : or = then the value.
+  // Capture group 1 = value only; we record only that span so masking leaves
+  // the readable label intact.
   const genericRe =
-    /(?:key|token|secret|api[_\-]?key|access[_\-]?key|auth)\s*[:=]\s*["']?([A-Za-z0-9\-_./+]{16,})["']?/gi;
+    /(?:api[_\- ]?key|token|secret|access[_\-]?key|auth)[^\n]{0,40}?[:=]\s*["']?([A-Za-z0-9_\-./+]{16,})["']?/gi;
   const g = new RegExp(genericRe.source, genericRe.flags);
   let m: RegExpExecArray | null;
   while ((m = g.exec(text)) !== null) {
+    // m[1] is the captured value; m.index + m[0].indexOf(m[1]) = value start
+    const valueStart = m.index + m[0].indexOf(m[1]);
     results.push({
-      start: m.index,
-      end: m.index + m[0].length,
+      start: valueStart,
+      end: valueStart + m[1].length,
       category: "api_key",
       severity: "critical",
-      value: m[0],
+      value: m[1],
     });
   }
 
   return results;
 }
+
 
 function detectIpAddress(text: string): RawMatch[] {
   return findAll(
