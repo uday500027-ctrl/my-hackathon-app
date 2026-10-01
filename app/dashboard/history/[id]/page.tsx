@@ -67,7 +67,10 @@ export default async function ScanDetailPage({
         </p>
       </div>
 
-      <ScanResultPanel scan={scan as ScanRecord} />
+      <ScanResultPanel
+        scan={scan as ScanRecord}
+        destinationLabel={DESTINATION_LABELS[scan.destination as string] ?? scan.destination}
+      />
     </div>
   );
 }

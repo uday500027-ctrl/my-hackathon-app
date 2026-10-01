@@ -11,7 +11,8 @@ import {
 } from "@/components/ui/select";
 import { RiskBadge } from "@/app/dashboard/ScanResultPanel";
 import type { ScanRecord } from "@/app/dashboard/scan-types";
-import { DESTINATION_LABELS } from "@/app/dashboard/scan-types";
+import { DESTINATION_LABELS, VERDICT_LABELS } from "@/app/dashboard/scan-types";
+import type { Verdict } from "@/app/dashboard/scan-types";
 
 const DESTINATIONS = ["ai_chatbot", "email_external", "public_post", "internal_chat"] as const;
 const RISK_LEVELS = ["low", "medium", "high", "critical"] as const;
@@ -178,11 +179,29 @@ export default function HistoryPage() {
                     <span>{formatDate(item.created_at)}</span>
                     <span>&middot;</span>
                     <span>{DESTINATION_LABELS[item.destination] ?? item.destination}</span>
+                    {item.source === "document" && (
+                      <span className="rounded bg-neutral-100 px-1.5 py-0.5 text-[10px] font-medium text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400">
+                        Document
+                      </span>
+                    )}
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3">
                   <RiskBadge level={item.risk_level} />
+                  {item.source === "document" && item.verdict && (
+                    <span
+                      className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${
+                        item.verdict === "safe"
+                          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
+                          : item.verdict === "redact_first"
+                          ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300"
+                          : "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300"
+                      }`}
+                    >
+                      {VERDICT_LABELS[item.verdict as Verdict]}
+                    </span>
+                  )}
 
                   {confirmId === item.id ? (
                     <div className="flex items-center gap-2">

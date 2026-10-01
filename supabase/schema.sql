@@ -30,6 +30,8 @@ create table public.scans (
   ai_status text not null default 'ok' check (ai_status in ('ok','fallback')),
   risk_score int not null check (risk_score between 0 and 100),
   risk_level text not null check (risk_level in ('low','medium','high','critical')),
+  source text not null default 'text' check (source in ('text','document')),
+  verdict text check (verdict in ('safe','redact_first','do_not_upload')),
   created_at timestamptz not null default now()
 );
 create index scans_user_created_idx on public.scans(user_id, created_at desc);

@@ -15,6 +15,7 @@ const CATEGORIES = [
   "Passwords",
   "Custom terms you define",
   "Contextual business and credential risks via AI",
+  "Documents (PDF, Word, text) and hidden prompt-injection instructions",
 ];
 
 const GUARANTEES = [

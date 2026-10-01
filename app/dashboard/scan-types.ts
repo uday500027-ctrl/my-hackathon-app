@@ -16,6 +16,8 @@ export interface AiAnalysisData {
   contextual_findings: AiContextualFinding[];
 }
 
+export type Verdict = "safe" | "redact_first" | "do_not_upload";
+
 export interface ScanRecord {
   id: string;
   user_id: string;
@@ -36,7 +38,12 @@ export interface ScanRecord {
   ai_notice?: string;
   risk_score: number;
   risk_level: string;
+  source?: "text" | "document";
+  verdict?: Verdict | null;
   created_at: string;
+  // transient fields from document scan response (not persisted separately)
+  truncated?: boolean;
+  pageCount?: number;
 }
 
 export const DESTINATION_LABELS: Record<string, string> = {
@@ -64,8 +71,15 @@ export const CATEGORY_LABELS: Record<string, string> = {
   ip_address: "IP address",
   password: "Password",
   custom_term: "Custom term",
+  prompt_injection: "Prompt injection",
   confidential_business: "Confidential business info",
   credential_in_prose: "Credential in prose",
   personal_data: "Personal data",
   other: "Contextual risk",
+};
+
+export const VERDICT_LABELS: Record<Verdict, string> = {
+  safe: "Safe to upload",
+  redact_first: "Redact first",
+  do_not_upload: "Do not upload",
 };

@@ -157,7 +157,7 @@ async function getHandler(req: Request): Promise<Response> {
   let query = supabase
     .from("scans")
     .select(
-      "id, user_id, policy_id, title, destination, findings, ai_status, risk_score, risk_level, created_at",
+      "id, user_id, policy_id, title, destination, findings, ai_status, risk_score, risk_level, source, verdict, created_at",
       { count: "exact" }
     )
     .eq("user_id", session.userId)
