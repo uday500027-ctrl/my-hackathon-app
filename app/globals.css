@@ -8,8 +8,14 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
+  --font-serif: var(--font-serif);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-heading: var(--font-serif);
+  /* Forest-green accent for landing */
+  --color-land-accent: var(--land-accent);
+  --color-land-accent-hover: var(--land-accent-hover);
+  --color-land-bg: var(--land-bg);
+
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -49,7 +55,12 @@
 }
 
 :root {
+  /* Landing design tokens */
+  --land-bg: #f7f5f2;
+  --land-accent: #2f5e3e;
+  --land-accent-hover: #245032;
   --background: oklch(1 0 0);
+
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
@@ -126,5 +137,63 @@
   }
   html {
     @apply font-sans;
+  }
+}
+
+/* ── Landing page utilities ───────────────────────────────────────────────── */
+/* Used by server components that cannot use JS event handlers for hover */
+.btn-accent {
+  background-color: var(--land-accent);
+  color: #fff;
+  transition: background-color 150ms ease;
+}
+.btn-accent:hover,
+.btn-accent:focus-visible {
+  background-color: var(--land-accent-hover);
+}
+
+/* Numbered step circle */
+.step-circle {
+  background-color: var(--land-accent);
+}
+
+/* Category list bullet */
+.category-dot {
+  background-color: var(--land-accent);
+}
+
+/* Guarantee marker */
+.guarantee-marker {
+  color: var(--land-accent);
+}
+
+/* font-serif utility for server components (Tailwind can't resolve CSS var directly) */
+.font-serif {
+  font-family: var(--font-serif), Georgia, serif;
+}
+
+/* Smooth scrolling — disabled for users who prefer reduced motion */
+html {
+  scroll-behavior: smooth;
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* ── Spline canvas edge-to-edge fill ──────────────────────────────────────── */
+.spline-scene-layer canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+@media (pointer: coarse) {
+  .spline-scene-layer {
+    pointer-events: none !important;
   }
 }

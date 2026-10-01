@@ -17,15 +17,30 @@ export default async function DashboardLayout({
       <header className="sticky top-0 z-10 border-b border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3">
           <div className="flex items-center gap-6">
-            <span className="text-base font-semibold tracking-tight text-neutral-900 dark:text-neutral-100">
+            <Link
+              href="/"
+              className="font-serif text-base font-semibold tracking-tight text-neutral-900 transition-colors hover:text-[#2f5e3e] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2f5e3e] focus-visible:ring-offset-2 rounded dark:text-neutral-100 dark:hover:text-emerald-400"
+            >
               PasteGuard
-            </span>
+            </Link>
             <nav className="flex items-center gap-1">
               <Link
                 href="/dashboard"
                 className="rounded-md px-3 py-1.5 text-sm font-medium text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
               >
                 Scan
+              </Link>
+              <Link
+                href="/dashboard/policies"
+                className="rounded-md px-3 py-1.5 text-sm font-medium text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+              >
+                Policies
+              </Link>
+              <Link
+                href="/dashboard/insights"
+                className="rounded-md px-3 py-1.5 text-sm font-medium text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+              >
+                Insights
               </Link>
               <Link
                 href="/dashboard/history"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -40,14 +40,43 @@ function buildSampleText(): string {
   ].join("\n");
 }
 
+interface PolicyOption {
+  id: string;
+  name: string;
+  is_default: boolean;
+}
+
 export default function ScanPage() {
   const [text, setText] = useState("");
   const [destination, setDestination] = useState<string>("ai_chatbot");
+  const [policies, setPolicies] = useState<PolicyOption[]>([]);
+  const [policyId, setPolicyId] = useState<string>("");
   const [title, setTitle] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ScanRecord | null>(null);
   const [error, setError] = useState("");
   const resultRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    async function loadPolicies() {
+      try {
+        const res = await fetch("/api/policies");
+        const data = await res.json();
+        if (res.ok && Array.isArray(data.data)) {
+          setPolicies(data.data);
+          const defaultPol = data.data.find((p: PolicyOption) => p.is_default);
+          if (defaultPol) {
+            setPolicyId(defaultPol.id);
+          } else if (data.data.length > 0) {
+            setPolicyId(data.data[0].id);
+          }
+        }
+      } catch {
+        // Fallback silently if policies couldn't be loaded
+      }
+    }
+    loadPolicies();
+  }, []);
 
   async function handleScan() {
     setError("");
@@ -58,7 +87,12 @@ export default function ScanPage() {
       const res = await fetch("/api/scans", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, destination, title: title || undefined }),
+        body: JSON.stringify({
+          text,
+          destination,
+          title: title || undefined,
+          policy_id: policyId || undefined,
+        }),
       });
 
       const data = await res.json();
@@ -121,6 +155,39 @@ export default function ScanPage() {
             placeholder="e.g. Support email draft"
             className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder-neutral-500"
           />
+        </div>
+
+        {/* Policy select */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="scan-policy" className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+              Policy
+            </Label>
+            <a
+              href="/dashboard/policies"
+              className="text-xs text-neutral-500 hover:text-neutral-900 underline dark:text-neutral-400 dark:hover:text-neutral-200"
+            >
+              Manage policies
+            </a>
+          </div>
+          {policies.length > 0 ? (
+            <Select value={policyId} onValueChange={setPolicyId}>
+              <SelectTrigger id="scan-policy" className="w-full sm:w-64">
+                <SelectValue placeholder="Select a policy" />
+              </SelectTrigger>
+              <SelectContent>
+                {policies.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name} {p.is_default ? "(Default)" : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              Using default system policy.
+            </p>
+          )}
         </div>
 
         {/* Destination */}
