@@ -11,8 +11,6 @@
   },
   "dependencies": {
     "@google/genai": "^2.25.0",
-    "@splinetool/react-spline": "^4.1.0",
-    "@splinetool/runtime": "^2.0.62",
     "@supabase/supabase-js": "^2.117.2",
     "@types/bcryptjs": "^2.4.6",
     "bcryptjs": "^3.0.3",

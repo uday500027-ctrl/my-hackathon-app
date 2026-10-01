@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getSession } from "@/lib/auth";
-import SplineHero from "@/components/landing/SplineHero";
+import RedactionDemo from "@/components/landing/RedactionDemo";
 import Reveal from "@/components/landing/Reveal";
 
 const CATEGORIES = [
@@ -98,20 +98,14 @@ export default async function LandingPage() {
       <main className="flex-1">
 
         {/* ── Hero ────────────────────────────────────────────────────────── */}
-        <section className="relative isolate overflow-hidden bg-[#0a0a0a] min-h-[70vh] md:min-h-[78vh] flex items-center">
-          {/* Background Spline 3D scene */}
-          <SplineHero />
-
-          {/* Flat dark scrim for contrast between scene and content */}
-          <div className="absolute inset-0 bg-black/45 pointer-events-none" aria-hidden="true" />
-
-          {/* Content wrapper: pointer-events-none so the scene can react to mouse moves */}
-          <div className={`relative z-10 ${CONTAINER} py-20 pointer-events-none`}>
+        <section style={{ backgroundColor: "var(--land-bg)" }} className="py-16 md:py-24">
+          <div className={`${CONTAINER} grid items-center gap-12 lg:grid-cols-2 lg:gap-16`}>
+            {/* Left column: Text */}
             <div className="max-w-xl space-y-6">
-              <h1 className="font-serif text-4xl font-bold leading-tight tracking-tight text-[#f6f4ef] md:text-5xl">
+              <h1 className="font-serif text-4xl font-bold leading-tight tracking-tight text-neutral-900 md:text-5xl">
                 Check what you paste before you send it.
               </h1>
-              <p className="text-base leading-relaxed text-[#f6f4ef]/85">
+              <p className="text-base leading-relaxed text-neutral-600 md:text-lg">
                 PasteGuard masks personal data, keys and passwords on the
                 server, then has Gemini review only the masked text for
                 business and context risks — so your raw text is never exposed.
@@ -119,19 +113,24 @@ export default async function LandingPage() {
               <div className="flex flex-wrap items-center gap-4 pt-1">
                 <Link
                   href={primaryHref}
-                  className="btn-accent inline-flex items-center rounded-lg px-5 py-2.5 text-sm font-medium text-[#f6f4ef] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2f5e3e] focus-visible:ring-offset-2 pointer-events-auto"
+                  className="btn-accent inline-flex items-center rounded-lg px-5 py-2.5 text-sm font-medium text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2f5e3e] focus-visible:ring-offset-2"
                 >
                   {primaryLabel}
                 </Link>
                 {!isLoggedIn && (
                   <Link
                     href="/login"
-                    className="inline-flex items-center text-sm font-medium text-[#f6f4ef] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2f5e3e] focus-visible:ring-offset-2 rounded pointer-events-auto"
+                    className="text-sm font-medium text-neutral-600 transition-colors hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2f5e3e] focus-visible:ring-offset-2 rounded"
                   >
                     Sign in
                   </Link>
                 )}
               </div>
+            </div>
+
+            {/* Right column: RedactionDemo */}
+            <div className="flex items-center justify-center lg:justify-end">
+              <RedactionDemo />
             </div>
           </div>
         </section>
