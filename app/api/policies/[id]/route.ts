@@ -143,7 +143,7 @@ async function deleteHandler(
   if (existing.is_default) {
     return fail(
       "cannot_delete_default",
-      "Choose another default policy first before deleting this one.",
+      "Choose another default policy first",
       400
     );
   }

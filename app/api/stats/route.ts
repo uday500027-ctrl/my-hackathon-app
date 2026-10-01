@@ -14,7 +14,7 @@ async function getHandler(): Promise<Response> {
   // Select only aggregate-relevant columns — never masked_text
   const { data: scans, error } = await supabase
     .from("scans")
-    .select("created_at, risk_score, risk_level, findings, ai_status, destination")
+    .select("created_at, risk_score, risk_level, findings, ai_status, source, verdict")
     .eq("user_id", session.userId)
     .gte("created_at", thirtyDaysAgo)
     .order("created_at", { ascending: false })
@@ -82,6 +82,8 @@ async function getHandler(): Promise<Response> {
     }
   }
 
+  const documentScans = scanList.filter((s) => s.source === "document").length;
+
   const aiReviewedPercent =
     totalScans > 0 ? Math.round((aiReviewedCount / totalScans) * 100) : 0;
 
@@ -106,6 +108,7 @@ async function getHandler(): Promise<Response> {
     perDay,
     topCategories,
     aiReviewedPercent,
+    documentScans,
   });
 }
 

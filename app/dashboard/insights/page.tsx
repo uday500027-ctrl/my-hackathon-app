@@ -6,8 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import {
   ResponsiveContainer,
-  LineChart,
-  Line,
   BarChart,
   Bar,
   XAxis,
@@ -35,6 +33,7 @@ interface StatsData {
     count: number;
   }>;
   aiReviewedPercent: number;
+  documentScans: number;
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -47,6 +46,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   api_key: "API keys",
   ip_address: "IP address",
   password: "Password",
+  prompt_injection: "Prompt injection",
   confidential_business: "Confidential business",
   credential_in_prose: "Prose credentials",
   personal_data: "Personal data",
@@ -241,10 +241,10 @@ export default function InsightsPage() {
         <Card className="border-neutral-200 bg-white shadow-none dark:border-neutral-800 dark:bg-neutral-900">
           <CardHeader className="p-4 pb-1">
             <CardDescription className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
-              Critical scans
+              Document scans
             </CardDescription>
             <CardTitle className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
-              {stats.byRiskLevel.critical}
+              {stats.documentScans}
             </CardTitle>
           </CardHeader>
         </Card>
@@ -252,7 +252,7 @@ export default function InsightsPage() {
 
       {/* ── Charts Grid ───────────────────────────────────────────────────── */}
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Line Chart: Average risk over last 14 days */}
+        {/* Bar Chart: Average risk over last 14 days */}
         <Card className="border-neutral-200 bg-white shadow-none dark:border-neutral-800 dark:bg-neutral-900">
           <CardHeader className="p-5 pb-2">
             <CardTitle className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
@@ -266,7 +266,7 @@ export default function InsightsPage() {
             <div className="h-64 w-full">
               {mounted && (
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={trendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <BarChart data={trendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e5e5" />
                     <XAxis
                       dataKey="displayDate"
@@ -299,15 +299,12 @@ export default function InsightsPage() {
                         return null;
                       }}
                     />
-                    <Line
-                      type="monotone"
+                    <Bar
                       dataKey="avgRisk"
-                      stroke="#2f5e3e"
-                      strokeWidth={2}
-                      dot={{ r: 3, fill: "#2f5e3e" }}
-                      activeDot={{ r: 5 }}
+                      fill="#2f5e3e"
+                      radius={[3, 3, 0, 0]}
                     />
-                  </LineChart>
+                  </BarChart>
                 </ResponsiveContainer>
               )}
             </div>

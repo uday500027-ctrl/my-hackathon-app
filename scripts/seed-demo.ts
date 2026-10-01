@@ -1,10 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
 import bcrypt from "bcryptjs";
-import { detectAll, type Category } from "../lib/detectors";
-import { maskText } from "../lib/masking";
-import { computeRiskScore, type Destination, type Strictness } from "../lib/risk";
 
-const ALL_CATEGORIES: Category[] = [
+// ─── Categories & Types ────────────────────────────────────────────────────────
+
+const ALL_CATEGORIES = [
   "email",
   "phone",
   "aadhaar",
@@ -15,6 +14,333 @@ const ALL_CATEGORIES: Category[] = [
   "ip_address",
   "password",
 ];
+
+interface Finding {
+  id: string;
+  category: string;
+  placeholder: string;
+  severity: "low" | "medium" | "high" | "critical";
+  source: "detector" | "ai";
+  reason?: string;
+}
+
+interface ScanSeedSpec {
+  title: string;
+  destination: "ai_chatbot" | "email_external" | "public_post" | "internal_chat";
+  source: "text" | "document";
+  policyKey: "strict" | "code_review";
+  daysAgo: number;
+  aiStatus: "ok" | "fallback";
+  riskScore: number;
+  riskLevel: "low" | "medium" | "high" | "critical";
+  verdict?: "safe" | "redact_first" | "do_not_upload";
+  maskedText: string;
+  findings: Finding[];
+  aiSummary?: string;
+  recommendedActions?: string[];
+}
+
+// ─── 18 Realistic Scans Spread Across 14 Days ───────────────────────────────────
+
+const SEED_SCANS: ScanSeedSpec[] = [
+  {
+    title: "Customer Support Inquiry Draft.docx",
+    destination: "email_external",
+    source: "document",
+    policyKey: "strict",
+    daysAgo: 13,
+    aiStatus: "ok",
+    riskScore: 22,
+    riskLevel: "low",
+    verdict: "redact_first",
+    maskedText: "Hello, please confirm order for [EMAIL_1]. The account is in good standing.",
+    findings: [
+      { id: "email_1", category: "email", placeholder: "[EMAIL_1]", severity: "low", source: "detector" },
+    ],
+    aiSummary: "Single customer contact email detected in formal support reply.",
+    recommendedActions: ["Confirm recipient requires direct email address."],
+  },
+  {
+    title: "Database Migration Runbook",
+    destination: "internal_chat",
+    source: "text",
+    policyKey: "code_review",
+    daysAgo: 13,
+    aiStatus: "ok",
+    riskScore: 68,
+    riskLevel: "high",
+    maskedText: "Target host: [IP_ADDRESS_1]. Admin password is [PASSWORD_1]. Ensure TLS is enforced.",
+    findings: [
+      { id: "ip_1", category: "ip_address", placeholder: "[IP_ADDRESS_1]", severity: "medium", source: "detector" },
+      { id: "pw_1", category: "password", placeholder: "[PASSWORD_1]", severity: "critical", source: "detector" },
+    ],
+    aiSummary: "Internal database credentials and direct host IP found in deployment notes.",
+    recommendedActions: ["Store password in secret manager instead of plain text notes."],
+  },
+  {
+    title: "Vendor Agreement & Payment Terms.pdf",
+    destination: "email_external",
+    source: "document",
+    policyKey: "strict",
+    daysAgo: 12,
+    aiStatus: "ok",
+    riskScore: 48,
+    riskLevel: "medium",
+    verdict: "redact_first",
+    maskedText: "Invoice settlement will occur via UPI [UPI_ID_1]. Tax identity registered as PAN [PAN_1].",
+    findings: [
+      { id: "upi_1", category: "upi_id", placeholder: "[UPI_ID_1]", severity: "high", source: "detector" },
+      { id: "pan_1", category: "pan", placeholder: "[PAN_1]", severity: "high", source: "detector" },
+    ],
+    aiSummary: "Government tax identifiers and payment address included in contract draft.",
+    recommendedActions: ["Use billing portal link rather than sharing direct PAN/UPI in body."],
+  },
+  {
+    title: "LLM Code Refactoring Prompt",
+    destination: "ai_chatbot",
+    source: "text",
+    policyKey: "code_review",
+    daysAgo: 11,
+    aiStatus: "fallback",
+    riskScore: 35,
+    riskLevel: "medium",
+    maskedText: "Refactor this express middleware to reject requests from [IP_ADDRESS_1] if rate exceeded.",
+    findings: [
+      { id: "ip_1", category: "ip_address", placeholder: "[IP_ADDRESS_1]", severity: "medium", source: "detector" },
+    ],
+  },
+  {
+    title: "Billing Dispute Memo.pdf",
+    destination: "email_external",
+    source: "document",
+    policyKey: "strict",
+    daysAgo: 10,
+    aiStatus: "ok",
+    riskScore: 82,
+    riskLevel: "critical",
+    verdict: "do_not_upload",
+    maskedText: "Customer reported unauthorized charge on card [CARD_1]. Customer Aadhaar [AADHAAR_1] verified.",
+    findings: [
+      { id: "card_1", category: "card", placeholder: "[CARD_1]", severity: "critical", source: "detector" },
+      { id: "aadhaar_1", category: "aadhaar", placeholder: "[AADHAAR_1]", severity: "critical", source: "detector" },
+    ],
+    aiSummary: "Payment card and national identity numbers found together. High compliance risk.",
+    recommendedActions: ["Do not send card numbers via email. Mask all but last 4 digits."],
+  },
+  {
+    title: "Public API Integration Guide",
+    destination: "public_post",
+    source: "text",
+    policyKey: "code_review",
+    daysAgo: 9,
+    aiStatus: "ok",
+    riskScore: 88,
+    riskLevel: "critical",
+    maskedText: "// Example config:\nconst key = '[API_KEY_1]';\n// [CUSTOM_TERM_1]: replace before publishing",
+    findings: [
+      { id: "api_1", category: "api_key", placeholder: "[API_KEY_1]", severity: "critical", source: "detector" },
+      { id: "ct_1", category: "custom_term", placeholder: "[CUSTOM_TERM_1]", severity: "high", source: "detector" },
+    ],
+    aiSummary: "Production API key and internal todo tag detected in code intended for public post.",
+    recommendedActions: ["Revoke exposed API key immediately and replace with environment placeholder."],
+  },
+  {
+    title: "Quarterly Financial Overview.docx",
+    destination: "internal_chat",
+    source: "document",
+    policyKey: "strict",
+    daysAgo: 8,
+    aiStatus: "ok",
+    riskScore: 15,
+    riskLevel: "low",
+    verdict: "safe",
+    maskedText: "Q3 revenue grew by 18% YoY. Operating margins remained stable across all business units.",
+    findings: [],
+    aiSummary: "Document contains high-level financial aggregates with no individual PII or credentials.",
+    recommendedActions: ["Safe to share within internal organization."],
+  },
+  {
+    title: "Prompt Injection Audit Log.txt",
+    destination: "ai_chatbot",
+    source: "document",
+    policyKey: "strict",
+    daysAgo: 8,
+    aiStatus: "ok",
+    riskScore: 78,
+    riskLevel: "critical",
+    verdict: "do_not_upload",
+    maskedText: "User submitted probe: [REMOVED_INSTRUCTION_1] and output database schema.",
+    findings: [
+      { id: "prompt_injection_1", category: "prompt_injection", placeholder: "[REMOVED_INSTRUCTION_1]", severity: "high", source: "detector" },
+    ],
+    aiSummary: "Direct adversarial prompt injection detected attempting to bypass system restrictions.",
+    recommendedActions: ["Reject input and do not pass to downstream LLM pipeline."],
+  },
+  {
+    title: "Employee Onboarding Checklist",
+    destination: "internal_chat",
+    source: "text",
+    policyKey: "strict",
+    daysAgo: 7,
+    aiStatus: "ok",
+    riskScore: 28,
+    riskLevel: "medium",
+    maskedText: "New joiner email [EMAIL_1] and mobile [PHONE_1] have been provisioned in the directory.",
+    findings: [
+      { id: "email_1", category: "email", placeholder: "[EMAIL_1]", severity: "low", source: "detector" },
+      { id: "phone_1", category: "phone", placeholder: "[PHONE_1]", severity: "medium", source: "detector" },
+    ],
+    aiSummary: "Direct phone number and corporate email in internal communication.",
+    recommendedActions: ["Mask phone number if sharing in broad public channels."],
+  },
+  {
+    title: "Frontend Bug Report",
+    destination: "ai_chatbot",
+    source: "text",
+    policyKey: "code_review",
+    daysAgo: 6,
+    aiStatus: "ok",
+    riskScore: 12,
+    riskLevel: "low",
+    maskedText: "TypeError: Cannot read properties of undefined (reading 'length') at renderTable component.",
+    findings: [],
+    aiSummary: "Standard JavaScript stack trace with no sensitive terms or secrets.",
+    recommendedActions: ["Safe to submit to AI assistant."],
+  },
+  {
+    title: "Executive Contact Sheet.csv",
+    destination: "public_post",
+    source: "document",
+    policyKey: "strict",
+    daysAgo: 5,
+    aiStatus: "ok",
+    riskScore: 74,
+    riskLevel: "high",
+    verdict: "redact_first",
+    maskedText: "Name,Phone,Email\nExecutive One,[PHONE_1],[EMAIL_1]\nExecutive Two,[PHONE_2],[EMAIL_2]",
+    findings: [
+      { id: "phone_1", category: "phone", placeholder: "[PHONE_1]", severity: "medium", source: "detector" },
+      { id: "email_1", category: "email", placeholder: "[EMAIL_1]", severity: "low", source: "detector" },
+      { id: "phone_2", category: "phone", placeholder: "[PHONE_2]", severity: "medium", source: "detector" },
+      { id: "email_2", category: "email", placeholder: "[EMAIL_2]", severity: "low", source: "detector" },
+    ],
+    aiSummary: "Multiple direct executive contact numbers scheduled for public distribution.",
+    recommendedActions: ["Replace personal phone numbers with general corporate switchboard."],
+  },
+  {
+    title: "Server Deployment Script",
+    destination: "internal_chat",
+    source: "text",
+    policyKey: "code_review",
+    daysAgo: 5,
+    aiStatus: "ok",
+    riskScore: 60,
+    riskLevel: "high",
+    maskedText: "#!/bin/bash\nssh admin@[IP_ADDRESS_1] 'export DB_PASS=[PASSWORD_1]'",
+    findings: [
+      { id: "ip_1", category: "ip_address", placeholder: "[IP_ADDRESS_1]", severity: "medium", source: "detector" },
+      { id: "pw_1", category: "password", placeholder: "[PASSWORD_1]", severity: "critical", source: "detector" },
+    ],
+    aiSummary: "Hardcoded credentials in deployment shell command.",
+    recommendedActions: ["Inject passwords via secrets environment variables instead of command line."],
+  },
+  {
+    title: "Customer ID Proof Verification.pdf",
+    destination: "email_external",
+    source: "document",
+    policyKey: "strict",
+    daysAgo: 4,
+    aiStatus: "fallback",
+    riskScore: 55,
+    riskLevel: "high",
+    verdict: "redact_first",
+    maskedText: "Identity verified against Aadhaar number [AADHAAR_1]. Please archive.",
+    findings: [
+      { id: "aadhaar_1", category: "aadhaar", placeholder: "[AADHAAR_1]", severity: "critical", source: "detector" },
+    ],
+  },
+  {
+    title: "Customer Support Chat Transcript",
+    destination: "ai_chatbot",
+    source: "text",
+    policyKey: "strict",
+    daysAgo: 3,
+    aiStatus: "ok",
+    riskScore: 32,
+    riskLevel: "medium",
+    maskedText: "Customer stated: I sent payment to [UPI_ID_1] but order status is pending.",
+    findings: [
+      { id: "upi_1", category: "upi_id", placeholder: "[UPI_ID_1]", severity: "high", source: "detector" },
+    ],
+    aiSummary: "Personal UPI ID included in support transcript.",
+    recommendedActions: ["Verify customer identity via ticket number rather than UPI handle."],
+  },
+  {
+    title: "Release Notes Draft v2.4",
+    destination: "public_post",
+    source: "text",
+    policyKey: "code_review",
+    daysAgo: 2,
+    aiStatus: "ok",
+    riskScore: 10,
+    riskLevel: "low",
+    maskedText: "Version 2.4 improves caching, reduces cold starts, and updates the search index.",
+    findings: [],
+    aiSummary: "Clean release notes with zero sensitive keys or internal terminology.",
+    recommendedActions: ["Ready for public posting."],
+  },
+  {
+    title: "Internal Architecture Spec.md",
+    destination: "public_post",
+    source: "document",
+    policyKey: "code_review",
+    daysAgo: 2,
+    aiStatus: "ok",
+    riskScore: 65,
+    riskLevel: "high",
+    verdict: "redact_first",
+    maskedText: "Architecture overview: [CUSTOM_TERM_1] infrastructure topology for primary cluster [IP_ADDRESS_1].",
+    findings: [
+      { id: "ct_1", category: "custom_term", placeholder: "[CUSTOM_TERM_1]", severity: "high", source: "detector" },
+      { id: "ip_1", category: "ip_address", placeholder: "[IP_ADDRESS_1]", severity: "medium", source: "detector" },
+    ],
+    aiSummary: "Confidential internal architecture document marked for public distribution.",
+    recommendedActions: ["Sanitize internal network topography before public disclosure."],
+  },
+  {
+    title: "Urgent Payment Reminder",
+    destination: "email_external",
+    source: "text",
+    policyKey: "strict",
+    daysAgo: 1,
+    aiStatus: "ok",
+    riskScore: 42,
+    riskLevel: "medium",
+    maskedText: "Please settle invoice balance to card [CARD_1] or contact [EMAIL_1].",
+    findings: [
+      { id: "card_1", category: "card", placeholder: "[CARD_1]", severity: "critical", source: "detector" },
+      { id: "email_1", category: "email", placeholder: "[EMAIL_1]", severity: "low", source: "detector" },
+    ],
+    aiSummary: "Payment card reference and billing contact in outbound email.",
+    recommendedActions: ["Ensure full card number is masked."],
+  },
+  {
+    title: "Service Health Check Query",
+    destination: "ai_chatbot",
+    source: "text",
+    policyKey: "strict",
+    daysAgo: 0,
+    aiStatus: "ok",
+    riskScore: 10,
+    riskLevel: "low",
+    maskedText: "Generate a synthetic test script to ping microservices and report HTTP status codes.",
+    findings: [],
+    aiSummary: "Generic programming query without business identifiers or credentials.",
+    recommendedActions: ["Safe to send."],
+  },
+];
+
+// ─── Main Seed Function ────────────────────────────────────────────────────────
 
 async function seed() {
   const supabaseUrl = process.env.SUPABASE_URL;
@@ -29,12 +355,12 @@ async function seed() {
     auth: { persistSession: false },
   });
 
-  const DEMO_EMAIL = "demo@pasteguard.app";
-  const DEMO_NAME = "Demo Reviewer";
-  const rawPassword = process.env.DEMO_PASSWORD || "PasteGuard-Demo-2026";
-  const passwordHash = await bcrypt.hash(rawPassword, 10);
+  const DEMO_EMAIL = "demo@pasteguard.dev";
+  const DEMO_NAME = "Demo User";
+  const DEMO_PASSWORD = "Demo1234!";
+  const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
 
-  // 1. Idempotently create or update user
+  // 1. Idempotently create or update demo user
   const { data: existingUser } = await supabase
     .from("users")
     .select("id")
@@ -71,248 +397,110 @@ async function seed() {
     userId = newUser.id;
   }
 
-  // 2. Create 3 demo policies
-  const policyDefinitions = [
-    {
-      name: "Default policy",
+  // 2. Create the 2 specified policies
+  // Policy 1: "Strict compliance" (all categories, strict, default)
+  const { data: strictPolicy, error: strictError } = await supabase
+    .from("policies")
+    .insert({
+      user_id: userId,
+      name: "Strict compliance",
       is_default: true,
-      strictness: "balanced" as Strictness,
+      strictness: "strict",
       enabled_categories: ALL_CATEGORIES,
-      custom_terms: [] as string[],
-    },
-    {
-      name: "Strict - public posts",
-      is_default: false,
-      strictness: "strict" as Strictness,
-      enabled_categories: ALL_CATEGORIES,
-      custom_terms: ["Project Falcon", "Acme"],
-    },
-    {
-      name: "Relaxed - internal chat",
-      is_default: false,
-      strictness: "relaxed" as Strictness,
-      enabled_categories: ALL_CATEGORIES,
-      custom_terms: [] as string[],
-    },
-  ];
+      custom_terms: [],
+    })
+    .select("id")
+    .single();
 
-  const createdPolicies: Record<string, string> = {};
-
-  for (const def of policyDefinitions) {
-    const { data, error } = await supabase
-      .from("policies")
-      .insert({
-        user_id: userId,
-        name: def.name,
-        is_default: def.is_default,
-        strictness: def.strictness,
-        enabled_categories: def.enabled_categories,
-        custom_terms: def.custom_terms,
-      })
-      .select("id, name")
-      .single();
-
-    if (error || !data) {
-      console.error("Error creating policy:", error?.message);
-      process.exit(1);
-    }
-    createdPolicies[data.name] = data.id;
+  if (strictError || !strictPolicy) {
+    console.error("Error creating Strict compliance policy:", strictError?.message);
+    process.exit(1);
   }
 
-  // 3. Create ~14 scans spread over the last 14 days
-  // Assemble fake secrets by string concatenation so no raw keys exist in code
-  const fakeKey1 = ["AIza", "SyDemoKey", "493021", "AbCdEfGhIjK"].join("");
-  const fakeKey2 = ["sk-live-", "testcorp-", "99482019482", "xyz"].join("");
+  // Policy 2: "Code review" (api_key, password, ip_address, custom_terms: ["TODO: remove", "INTERNAL ONLY"], balanced)
+  const { data: codeReviewPolicy, error: codeError } = await supabase
+    .from("policies")
+    .insert({
+      user_id: userId,
+      name: "Code review",
+      is_default: false,
+      strictness: "balanced",
+      enabled_categories: ["api_key", "password", "ip_address"],
+      custom_terms: ["TODO: remove", "INTERNAL ONLY"],
+    })
+    .select("id")
+    .single();
 
-  const sampleScanConfigs: Array<{
-    title: string;
-    rawText: string;
-    destination: Destination;
-    policyName: string;
-    daysAgo: number;
-    aiStatus: "ok" | "fallback";
-    aiSummary?: string;
-  }> = [
-    {
-      title: "Support email reply",
-      rawText: "Hi team, please contact support lead at lead@example.com or mobile +1 555 019 2834 regarding ticket 402.",
-      destination: "email_external",
-      policyName: "Default policy",
-      daysAgo: 13,
-      aiStatus: "ok",
-      aiSummary: "Standard business email with direct contact details. Low severity once masked.",
-    },
-    {
-      title: "Staging database instructions",
-      rawText: "Connect to database server 10.0.4.12. The password is devPassword2026! and admin email is devops@example.com.",
-      destination: "internal_chat",
-      policyName: "Relaxed - internal chat",
-      daysAgo: 12,
-      aiStatus: "fallback",
-    },
-    {
-      title: "ChatGPT API helper prompt",
-      rawText: `Please debug this function that calls external services using key ${fakeKey1} for project client.`,
-      destination: "ai_chatbot",
-      policyName: "Default policy",
-      daysAgo: 11,
-      aiStatus: "ok",
-      aiSummary: "High risk credential exposed in prompt. Must be kept out of public LLM context.",
-    },
-    {
-      title: "Billing dispute memo",
-      rawText: "The customer paid with Visa card 4111 1111 1111 1111 under Acme account dispute reference #994.",
-      destination: "email_external",
-      policyName: "Strict - public posts",
-      daysAgo: 10,
-      aiStatus: "ok",
-      aiSummary: "Payment card details detected alongside proprietary partner name.",
-    },
-    {
-      title: "Roadmap public announcement draft",
-      rawText: "Our team is announcing Project Falcon next Tuesday. Contact press@example.com for early embargo access.",
-      destination: "public_post",
-      policyName: "Strict - public posts",
-      daysAgo: 9,
-      aiStatus: "fallback",
-    },
-    {
-      title: "Customer onboarding verification",
-      rawText: "Client PAN is ABCDE1234F and verification email has been sent to client.test@example.com.",
-      destination: "email_external",
-      policyName: "Default policy",
-      daysAgo: 8,
-      aiStatus: "ok",
-      aiSummary: "Government tax ID and personal email present in correspondence.",
-    },
-    {
-      title: "Vendor invoice UPI transfer",
-      rawText: "Send payment of invoice to vendor account via UPI ID vendor.payments@icici before end of day.",
-      destination: "internal_chat",
-      policyName: "Relaxed - internal chat",
-      daysAgo: 7,
-      aiStatus: "fallback",
-    },
-    {
-      title: "Public blog post code snippet",
-      rawText: `// Configuration\nconst API_SECRET = "${fakeKey2}";\nconst IP = "192.168.1.100";`,
-      destination: "public_post",
-      policyName: "Strict - public posts",
-      daysAgo: 6,
-      aiStatus: "ok",
-      aiSummary: "Critical production secrets embedded in draft intended for public distribution.",
-    },
-    {
-      title: "Internal meeting minutes",
-      rawText: "Met with Acme leadership to review quarterly deliverables. Follow up with team@example.com.",
-      destination: "internal_chat",
-      policyName: "Strict - public posts",
-      daysAgo: 5,
-      aiStatus: "fallback",
-    },
-    {
-      title: "Claude assistant query",
-      rawText: "Analyze this crash log from server 172.16.254.1 for user john.doe@example.com with password reset request.",
-      destination: "ai_chatbot",
-      policyName: "Default policy",
-      daysAgo: 4,
-      aiStatus: "ok",
-      aiSummary: "Personal identifiers and internal IP addresses in chatbot prompt.",
-    },
-    {
-      title: "Urgent refund notification",
-      rawText: "Refunding order for card 4111 1111 1111 1111. Contact accounts@example.com or +91 98765 43210 for queries.",
-      destination: "email_external",
-      policyName: "Default policy",
-      daysAgo: 3,
-      aiStatus: "fallback",
-    },
-    {
-      title: "Project Falcon status update",
-      rawText: "Project Falcon milestone 3 completed ahead of schedule. Acme integration ongoing.",
-      destination: "internal_chat",
-      policyName: "Strict - public posts",
-      daysAgo: 2,
-      aiStatus: "ok",
-      aiSummary: "Confidential internal project references detected.",
-    },
-    {
-      title: "External contractor access",
-      rawText: "Granted temporary access to server 192.168.2.55. Temporary password is TempPass#2026 for contractor.",
-      destination: "email_external",
-      policyName: "Default policy",
-      daysAgo: 1,
-      aiStatus: "fallback",
-    },
-    {
-      title: "Marketing email campaign list",
-      rawText: "Preview list includes subscriber sarah.smith@example.com and phone +1 555 432 1098.",
-      destination: "email_external",
-      policyName: "Default policy",
-      daysAgo: 0,
-      aiStatus: "ok",
-      aiSummary: "Direct consumer contact identifiers detected in email blast copy.",
-    },
-  ];
+  if (codeError || !codeReviewPolicy) {
+    console.error("Error creating Code review policy:", codeError?.message);
+    process.exit(1);
+  }
 
+  const policyMap = {
+    strict: strictPolicy.id,
+    code_review: codeReviewPolicy.id,
+  };
+
+  // 3. Seed 18 realistic scans spread over last 14 days
   const now = Date.now();
-  let createdScansCount = 0;
+  let createdCount = 0;
+  let textCount = 0;
+  let docCount = 0;
+  const riskCounts = { low: 0, medium: 0, high: 0, critical: 0 };
 
-  for (const config of sampleScanConfigs) {
-    const policyId = createdPolicies[config.policyName] || Object.values(createdPolicies)[0];
-    const isStrict = config.policyName.includes("Strict");
-    const customTerms = isStrict ? ["Project Falcon", "Acme"] : [];
-    const strictness: Strictness = isStrict ? "strict" : config.policyName.includes("Relaxed") ? "relaxed" : "balanced";
-
-    // Run pure detection and masking
-    const matches = detectAll(config.rawText, ALL_CATEGORIES, customTerms);
-    const { maskedText, findings } = maskText(config.rawText, matches);
-    const { riskScore, riskLevel } = computeRiskScore(findings, config.destination, strictness);
-
-    // Calculate timestamp with slight variation
+  for (const scan of SEED_SCANS) {
+    const policyId = policyMap[scan.policyKey];
     const createdAt = new Date(
-      now - config.daysAgo * 24 * 60 * 60 * 1000 - (config.daysAgo * 137000 % 3600000)
+      now - scan.daysAgo * 24 * 60 * 60 * 1000 - (scan.daysAgo * 187000 % 3600000)
     ).toISOString();
 
     let aiAnalysis = null;
-    if (config.aiStatus === "ok") {
+    if (scan.aiStatus === "ok") {
       aiAnalysis = {
-        summary: config.aiSummary || "Sensitive items detected and reviewed for destination appropriateness.",
-        safe_to_send: riskLevel === "low",
-        destination_assessment: `Evaluated risks specifically for ${config.destination.replace("_", " ")}.`,
-        recommended_actions: [
-          "Ensure sensitive identifiers are redacted prior to sending",
-          "Verify destination authorization for masked data types",
+        summary: scan.aiSummary || "Sensitive items evaluated for contextual and destination risks.",
+        safe_to_send: scan.riskLevel === "low",
+        destination_assessment: `Assessed specifically for ${scan.destination.replace("_", " ")}.`,
+        recommended_actions: scan.recommendedActions || [
+          "Verify sensitive items are redacted prior to sending",
         ],
-        risk_score: riskScore,
+        risk_score: scan.riskScore,
+        contextual_findings: [],
       };
     }
 
-    const { error: scanError } = await supabase.from("scans").insert({
+    const { error: insertError } = await supabase.from("scans").insert({
       user_id: userId,
       policy_id: policyId,
-      title: config.title,
-      destination: config.destination,
-      masked_text: maskedText,
-      findings,
+      title: scan.title,
+      destination: scan.destination,
+      source: scan.source,
+      verdict: scan.verdict ?? null,
+      masked_text: scan.maskedText,
+      findings: scan.findings,
       ai_analysis: aiAnalysis,
-      ai_status: config.aiStatus,
-      risk_score: riskScore,
-      risk_level: riskLevel,
+      ai_status: scan.aiStatus,
+      risk_score: scan.riskScore,
+      risk_level: scan.riskLevel,
       created_at: createdAt,
     });
 
-    if (scanError) {
-      console.error("Error creating demo scan:", scanError.message);
+    if (insertError) {
+      console.error(`Error inserting scan "${scan.title}":`, insertError.message);
     } else {
-      createdScansCount++;
+      createdCount++;
+      if (scan.source === "document") docCount++;
+      else textCount++;
+      riskCounts[scan.riskLevel]++;
     }
   }
 
-  // Print only demo user email and counts — never passwords, hashes or keys
-  console.log(`Created demo user: ${DEMO_EMAIL}`);
-  console.log(`Policies created: ${Object.keys(createdPolicies).length}`);
-  console.log(`Scans created: ${createdScansCount}`);
+  // 4. Print safe summary (never logs passwords or secrets)
+  console.log("─── Demo Seed Complete ───────────────────────────────────");
+  console.log(`Demo Account   : ${DEMO_EMAIL}`);
+  console.log(`Policies Seeded: 2 (Strict compliance [default], Code review)`);
+  console.log(`Scans Seeded   : ${createdCount} total (${textCount} text, ${docCount} document)`);
+  console.log(`Risk Breakdown : Low: ${riskCounts.low}, Medium: ${riskCounts.medium}, High: ${riskCounts.high}, Critical: ${riskCounts.critical}`);
+  console.log("──────────────────────────────────────────────────────────");
 }
 
 seed().catch((err) => {
