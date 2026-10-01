@@ -109,18 +109,20 @@ export default function SplineHero() {
           splineMountedRef.current = true;
           observer.disconnect();
 
-          // Preflight the scene URL before mounting Spline
+          // Preflight the scene URL with a 6-second timeout before mounting Spline
           preflightController = new AbortController();
+          const controller = preflightController;
           timeoutId = setTimeout(() => {
-            preflightController?.abort();
+            controller.abort();
           }, 6000);
 
-          fetch(SCENE_URL, {
-            method: "GET",
-            cache: "force-cache",
-            signal: preflightController.signal,
-          })
-            .then((res) => {
+          (async () => {
+            try {
+              const res = await fetch(SCENE_URL, {
+                method: "GET",
+                cache: "force-cache",
+                signal: controller.signal,
+              });
               if (timeoutId) clearTimeout(timeoutId);
               if (cancelled) return;
               if (res.ok) {
@@ -128,12 +130,12 @@ export default function SplineHero() {
                 setUseFallback(false);
                 setLoadState("loading");
               }
-              // If !res.ok: stay on static fallback, never mount Spline
-            })
-            .catch(() => {
+              // If not ok: stay on static fallback, never mount Spline
+            } catch {
               if (timeoutId) clearTimeout(timeoutId);
-              // On any failure: stay on static fallback, never mount Spline
-            });
+              // On any failure or timeout: stay on static fallback, never mount Spline
+            }
+          })();
         }
       },
       { threshold: 0.1 }
@@ -173,8 +175,8 @@ export default function SplineHero() {
       aria-hidden="true"
     >
       {/* ── Fallback layer ────────────────────────────────────────────────────
-          Dark static background: render /hero-fallback.svg as an <img> with
-          "absolute inset-0 h-full w-full object-cover opacity-20" on top of #0a0a0a root.
+          Dark static background: bg-[#0a0a0a] with /hero-fallback.svg as an <img>
+          at object-cover opacity-20 on top of #0a0a0a root.
           Cross-fades to the scene on onLoad with a 300ms opacity transition.
           No layout shift.
       */}
@@ -189,15 +191,15 @@ export default function SplineHero() {
 
       {/* ── Scene layer ───────────────────────────────────────────────────────
           "absolute inset-0 h-full w-full".
-          Spline gets className="h-full w-full" and style={{ width: "100%", height: "100%" }}.
-          Canvas set to display:block, width:100%, height:100%, margin 0.
+          Shifted on desktop (md:translate-x-[12%]) so its visual weight sits on the right.
+          Canvas fills the hero (display:block, width:100%, height:100%, margin 0).
           touch-action: pan-y so page scroll is never hijacked.
           On touch devices pointer-events: none on the scene.
-          Spline badge is left exactly as runtime renders it.
+          Spline badge is left exactly as runtime renders it (not hidden, cropped or scaled).
       */}
       {sceneReady && !useFallback && loadState !== "error" && (
         <div
-          className="absolute inset-0 h-full w-full [&_canvas]:block [&_canvas]:h-full [&_canvas]:w-full [&_canvas]:m-0 [&_canvas]:p-0 [&_canvas]:border-0 spline-scene-layer transition-opacity duration-300"
+          className="absolute inset-0 h-full w-full md:translate-x-[12%] [&_canvas]:block [&_canvas]:h-full [&_canvas]:w-full [&_canvas]:m-0 [&_canvas]:p-0 [&_canvas]:border-0 spline-scene-layer transition-opacity duration-300"
           style={{
             opacity: sceneOpacity,
             touchAction: "pan-y",

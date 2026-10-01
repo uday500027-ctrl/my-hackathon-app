@@ -97,12 +97,12 @@ export default async function LandingPage() {
       <main className="flex-1">
 
         {/* ── Hero ────────────────────────────────────────────────────────── */}
-        <section className="relative isolate overflow-hidden bg-[#0a0a0a] min-h-[80vh] flex items-center">
+        <section className="relative isolate overflow-hidden bg-[#0a0a0a] min-h-[70vh] md:min-h-[78vh] flex items-center">
           {/* Background Spline 3D scene */}
           <SplineHero />
 
           {/* Flat dark scrim for contrast between scene and content */}
-          <div className="absolute inset-0 bg-black/35 pointer-events-none" aria-hidden="true" />
+          <div className="absolute inset-0 bg-black/45 pointer-events-none" aria-hidden="true" />
 
           {/* Content wrapper: pointer-events-none so the scene can react to mouse moves */}
           <div className={`relative z-10 ${CONTAINER} py-20 pointer-events-none`}>
@@ -110,7 +110,7 @@ export default async function LandingPage() {
               <h1 className="font-serif text-4xl font-bold leading-tight tracking-tight text-[#f6f4ef] md:text-5xl">
                 Check what you paste before you send it.
               </h1>
-              <p className="text-base leading-relaxed text-[#f6f4ef]/80">
+              <p className="text-base leading-relaxed text-[#f6f4ef]/85">
                 PasteGuard masks personal data, keys and passwords on the
                 server, then has Gemini review only the masked text for
                 business and context risks — so your raw text is never exposed.
