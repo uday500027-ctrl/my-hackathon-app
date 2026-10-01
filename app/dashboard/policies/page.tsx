@@ -248,7 +248,7 @@ export default function PoliciesPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+          <h1 className="font-serif text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
             Policies
           </h1>
           <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
@@ -257,7 +257,7 @@ export default function PoliciesPage() {
         </div>
         <Button
           onClick={handleOpenCreate}
-          className="btn-accent self-start sm:self-auto"
+          className="btn-accent self-start sm:self-auto min-h-[40px] px-4 font-medium"
         >
           New policy
         </Button>
@@ -266,9 +266,16 @@ export default function PoliciesPage() {
       {error && (
         <div
           role="alert"
-          className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-400"
+          className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-400"
         >
-          {error}
+          <p>{error}</p>
+          <button
+            type="button"
+            onClick={() => setRefreshKey((k) => k + 1)}
+            className="inline-flex min-h-[40px] items-center justify-center rounded-lg border border-red-300 bg-white px-3.5 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2f5e3e] focus-visible:ring-offset-2 shrink-0 dark:border-red-800 dark:bg-neutral-900 dark:text-red-400"
+          >
+            Try again
+          </button>
         </div>
       )}
 
@@ -282,7 +289,7 @@ export default function PoliciesPage() {
           ))}
         </div>
       ) : policies.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-neutral-300 bg-white p-12 text-center dark:border-neutral-700 dark:bg-neutral-900">
+        <div className="rounded-xl border border-dashed border-neutral-300 bg-white p-12 text-center dark:border-neutral-700 dark:bg-neutral-900 shadow-none">
           <h2 className="text-base font-semibold text-neutral-800 dark:text-neutral-200">
             No policies found
           </h2>
@@ -291,7 +298,7 @@ export default function PoliciesPage() {
           </p>
           <Button
             onClick={handleOpenCreate}
-            className="btn-accent mt-4"
+            className="btn-accent mt-4 min-h-[40px] px-4 font-medium"
           >
             Create first policy
           </Button>
@@ -303,7 +310,7 @@ export default function PoliciesPage() {
             return (
               <Card
                 key={p.id}
-                className="flex flex-col justify-between border-neutral-200 bg-white shadow-none transition-shadow hover:shadow-xs dark:border-neutral-800 dark:bg-neutral-900"
+                className="flex flex-col justify-between border-neutral-200 bg-white shadow-none transition-shadow hover:shadow-xs dark:border-neutral-800 dark:bg-neutral-900 rounded-xl"
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between gap-2">
@@ -359,7 +366,7 @@ export default function PoliciesPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleOpenEdit(p)}
-                        className="h-8 px-2.5 text-xs text-neutral-700 hover:text-neutral-900 dark:text-neutral-300"
+                        className="min-h-[40px] px-3 text-xs text-neutral-700 hover:text-neutral-900 dark:text-neutral-300"
                       >
                         Edit
                       </Button>
@@ -369,7 +376,7 @@ export default function PoliciesPage() {
                         disabled={p.is_default}
                         title={p.is_default ? "Default policy cannot be deleted" : "Delete policy"}
                         onClick={() => handleOpenDelete(p)}
-                        className="h-8 px-2.5 text-xs text-neutral-500 hover:text-red-600 disabled:opacity-40"
+                        className="min-h-[40px] px-3 text-xs text-neutral-500 hover:text-red-600 disabled:opacity-40"
                       >
                         Delete
                       </Button>
@@ -417,7 +424,7 @@ export default function PoliciesPage() {
                   placeholder="e.g., Strict External, Internal Chat..."
                   value={formName}
                   onChange={(e) => setFormName(e.target.value)}
-                  className="text-sm"
+                  className="text-sm min-h-[40px]"
                   required
                 />
               </div>
@@ -431,7 +438,7 @@ export default function PoliciesPage() {
                   value={formStrictness}
                   onValueChange={(val: "relaxed" | "balanced" | "strict") => setFormStrictness(val)}
                 >
-                  <SelectTrigger id="policy-strictness" className="w-full text-sm">
+                  <SelectTrigger id="policy-strictness" className="w-full text-sm min-h-[40px]">
                     <SelectValue placeholder="Select strictness" />
                   </SelectTrigger>
                   <SelectContent>
@@ -458,7 +465,7 @@ export default function PoliciesPage() {
                     return (
                       <label
                         key={cat}
-                        className="flex cursor-pointer items-center gap-2 text-xs text-neutral-700 dark:text-neutral-300"
+                        className="flex cursor-pointer items-center gap-2 py-1 text-xs text-neutral-700 dark:text-neutral-300"
                       >
                         <Checkbox
                           checked={isChecked}
@@ -515,14 +522,14 @@ export default function PoliciesPage() {
                 variant="outline"
                 onClick={() => setDialogOpen(false)}
                 disabled={isSubmitting}
-                className="text-xs"
+                className="text-xs min-h-[40px] px-4"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="btn-accent text-xs"
+                className="btn-accent text-xs min-h-[40px] px-4"
               >
                 {isSubmitting ? "Saving..." : editingPolicy ? "Save changes" : "Create policy"}
               </Button>
@@ -558,7 +565,7 @@ export default function PoliciesPage() {
               variant="outline"
               onClick={() => setDeleteDialogOpen(false)}
               disabled={isDeleting}
-              className="text-xs"
+              className="text-xs min-h-[40px] px-4"
             >
               Cancel
             </Button>
@@ -567,7 +574,7 @@ export default function PoliciesPage() {
               variant="destructive"
               onClick={handleConfirmDelete}
               disabled={isDeleting}
-              className="text-xs"
+              className="text-xs min-h-[40px] px-4"
             >
               {isDeleting ? "Deleting..." : "Delete policy"}
             </Button>

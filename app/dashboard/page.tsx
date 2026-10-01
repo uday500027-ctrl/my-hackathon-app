@@ -127,34 +127,36 @@ export default function ScanPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+        <h1 className="font-serif text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
           Scan
         </h1>
         <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-          Paste text or upload a document. Sensitive values will be masked before analysis.
+          Paste text or upload a document to detect sensitive values and evaluate risks before sending.
         </p>
       </div>
 
       {/* Mode toggle */}
-      <div className="flex rounded-lg border border-neutral-200 bg-neutral-50 p-1 w-fit dark:border-neutral-800 dark:bg-neutral-900">
+      <div className="inline-flex rounded-lg border border-neutral-200 bg-neutral-100/70 p-1 dark:border-neutral-800 dark:bg-neutral-900">
         <button
           id="mode-text"
+          type="button"
           onClick={() => { setMode("text"); setResult(null); setError(""); }}
-          className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
+          className={`inline-flex min-h-[40px] items-center rounded-md px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2f5e3e] focus-visible:ring-offset-2 ${
             mode === "text"
-              ? "bg-white text-neutral-900 shadow-sm dark:bg-neutral-800 dark:text-neutral-100"
-              : "text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300"
+              ? "bg-white text-neutral-900 shadow-xs dark:bg-neutral-800 dark:text-neutral-100"
+              : "text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-200"
           }`}
         >
           Text
         </button>
         <button
           id="mode-document"
+          type="button"
           onClick={() => { setMode("document"); setResult(null); setError(""); }}
-          className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
+          className={`inline-flex min-h-[40px] items-center rounded-md px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2f5e3e] focus-visible:ring-offset-2 ${
             mode === "document"
-              ? "bg-white text-neutral-900 shadow-sm dark:bg-neutral-800 dark:text-neutral-100"
-              : "text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300"
+              ? "bg-white text-neutral-900 shadow-xs dark:bg-neutral-800 dark:text-neutral-100"
+              : "text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-200"
           }`}
         >
           Document
@@ -174,7 +176,7 @@ export default function ScanPage() {
             </div>
           )}
 
-          <div className="space-y-4 rounded-xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+          <div className="space-y-5 rounded-xl border border-neutral-200 bg-white p-6 shadow-none dark:border-neutral-800 dark:bg-neutral-900">
             {/* Optional title */}
             <div className="space-y-1.5">
               <Label htmlFor="scan-title" className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
@@ -187,7 +189,7 @@ export default function ScanPage() {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="e.g. Support email draft"
-                className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder-neutral-500"
+                className="w-full min-h-[40px] rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#2f5e3e] dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder-neutral-500"
               />
             </div>
 
@@ -199,14 +201,14 @@ export default function ScanPage() {
                 </Label>
                 <a
                   href="/dashboard/policies"
-                  className="text-xs text-neutral-500 hover:text-neutral-900 underline dark:text-neutral-400 dark:hover:text-neutral-200"
+                  className="inline-flex min-h-[40px] items-center text-xs text-neutral-500 hover:text-neutral-900 underline dark:text-neutral-400 dark:hover:text-neutral-200"
                 >
                   Manage policies
                 </a>
               </div>
               {policies.length > 0 ? (
                 <Select value={policyId} onValueChange={setPolicyId}>
-                  <SelectTrigger id="scan-policy" className="w-full sm:w-64">
+                  <SelectTrigger id="scan-policy" className="w-full sm:w-64 min-h-[40px]">
                     <SelectValue placeholder="Select a policy" />
                   </SelectTrigger>
                   <SelectContent>
@@ -230,7 +232,7 @@ export default function ScanPage() {
                 Destination
               </Label>
               <Select value={destination} onValueChange={setDestination}>
-                <SelectTrigger id="scan-destination" className="w-full sm:w-64">
+                <SelectTrigger id="scan-destination" className="w-full sm:w-64 min-h-[40px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -266,7 +268,7 @@ export default function ScanPage() {
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 placeholder="Paste your text here…"
-                className="w-full resize-y rounded-lg border border-neutral-300 bg-white px-3 py-2 font-mono text-sm text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder-neutral-500"
+                className="w-full resize-y rounded-lg border border-neutral-300 bg-white px-3 py-2 font-mono text-sm text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#2f5e3e] dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder-neutral-500"
               />
             </div>
 
@@ -276,7 +278,7 @@ export default function ScanPage() {
                 id="scan-submit"
                 onClick={handleScan}
                 disabled={loading || !text.trim() || overLimit}
-                className="rounded-lg bg-neutral-900 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-neutral-500 disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-300"
+                className="inline-flex min-h-[40px] items-center justify-center rounded-lg bg-neutral-900 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2f5e3e] focus-visible:ring-offset-2 disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-300"
               >
                 {loading ? "Scanning…" : "Scan"}
               </button>
@@ -284,7 +286,7 @@ export default function ScanPage() {
                 id="scan-load-sample"
                 type="button"
                 onClick={handleLoadSample}
-                className="rounded-lg border border-neutral-300 bg-white px-5 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800"
+                className="inline-flex min-h-[40px] items-center justify-center rounded-lg border border-neutral-300 bg-white px-5 py-2.5 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2f5e3e] focus-visible:ring-offset-2 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800"
               >
                 Load sample text
               </button>

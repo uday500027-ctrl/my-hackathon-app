@@ -14,24 +14,24 @@ const RISK_COLORS: Record<string, string> = {
 };
 
 const SEVERITY_COLORS: Record<string, string> = {
-  low: "bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300",
-  medium: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
-  high: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300",
-  critical: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
+  low: "bg-neutral-100 text-neutral-700 border-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:border-neutral-700",
+  medium: "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800",
+  high: "bg-orange-50 text-orange-800 border-orange-200 dark:bg-orange-950/40 dark:text-orange-300 dark:border-orange-800",
+  critical: "bg-red-50 text-red-800 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800",
 };
 
 const VERDICT_STYLES: Record<Verdict, { container: string; text: string }> = {
   safe: {
-    container: "border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/30",
-    text: "text-emerald-800 dark:text-emerald-300",
+    container: "border-emerald-200 bg-emerald-50/70 dark:border-emerald-900/60 dark:bg-emerald-950/30",
+    text: "text-emerald-900 dark:text-emerald-300",
   },
   redact_first: {
-    container: "border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30",
-    text: "text-amber-800 dark:text-amber-300",
+    container: "border-amber-200/80 bg-[#f9f7f2] dark:border-amber-900/50 dark:bg-stone-900/40",
+    text: "text-[#78541a] dark:text-amber-300",
   },
   do_not_upload: {
-    container: "border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30",
-    text: "text-red-800 dark:text-red-400",
+    container: "border-red-200 bg-red-50/80 dark:border-red-900/60 dark:bg-red-950/40",
+    text: "text-red-900 dark:text-red-400",
   },
 };
 
@@ -76,7 +76,6 @@ function buildMarkdownReport(scan: ScanRecord, destination: string): string {
     ? scan.ai_analysis.recommended_actions.map((a) => `- ${a}`).join("\n")
     : "- No specific actions recommended.";
 
-  // Safe text — only the masked text, no raw values
   const safeText = scan.masked_text ?? "(Not available in this view)";
 
   return [
@@ -114,8 +113,9 @@ function buildMarkdownReport(scan: ScanRecord, destination: string): string {
 export function RiskBadge({ level }: { level: string }) {
   return (
     <Badge
+      variant="outline"
       className={cn(
-        "font-medium capitalize",
+        "font-medium capitalize text-xs border-0",
         RISK_COLORS[level] ?? "bg-neutral-100 text-neutral-600"
       )}
     >
@@ -130,9 +130,9 @@ export function VerdictCard({ verdict, findings }: { verdict: Verdict; findings:
   const reason = buildVerdictReason(findings);
 
   return (
-    <div className={cn("rounded-lg border px-4 py-4", styles.container)}>
-      <p className={cn("text-sm font-semibold", styles.text)}>{label}</p>
-      <p className="mt-1 text-xs text-neutral-600 dark:text-neutral-400">{reason}</p>
+    <div className={cn("rounded-xl border p-5 shadow-none", styles.container)}>
+      <p className={cn("text-base font-semibold tracking-tight", styles.text)}>{label}</p>
+      <p className="mt-1 text-xs leading-relaxed text-neutral-600 dark:text-neutral-400">{reason}</p>
     </div>
   );
 }
@@ -200,8 +200,10 @@ export function ScanResultPanel({
     scan.ai_notice ||
     "AI review is unavailable right now, so this result uses automatic detection only.";
 
+  const severityOrder = ["critical", "high", "medium", "low"];
+
   return (
-    <div className="mt-6 space-y-6 rounded-xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+    <div className="mt-6 space-y-6 rounded-xl border border-neutral-200 bg-white p-6 shadow-none dark:border-neutral-800 dark:bg-neutral-900">
       {/* Truncation notice */}
       {scan.truncated && (
         <div className="rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-3 text-xs text-neutral-600 dark:border-neutral-700 dark:bg-neutral-800/60 dark:text-neutral-400">
@@ -216,27 +218,42 @@ export function ScanResultPanel({
         </div>
       )}
 
-      {/* Verdict card — document scans only */}
+      {/* Verdict card — prominent and calm */}
       {isDocument && scan.verdict && (
         <VerdictCard verdict={scan.verdict} findings={scan.findings} />
       )}
 
-      {/* Header & Score */}
-      <div>
+      {/* Risk Score: large number with a simple horizontal bar (tone only) */}
+      <div className="space-y-3">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2">
-            <span className="text-3xl font-bold tabular-nums text-neutral-900 dark:text-neutral-100">
+          <div className="flex items-baseline gap-1.5">
+            <span className="font-serif text-4xl font-bold tabular-nums text-neutral-900 dark:text-neutral-100">
               {scan.risk_score}
             </span>
-            <span className="text-sm text-neutral-500">/100</span>
+            <span className="text-sm font-normal text-neutral-400">/100</span>
           </div>
           <RiskBadge level={scan.risk_level} />
           {scan.findings.length === 0 && (
             <span className="text-sm text-neutral-500">No sensitive data detected</span>
           )}
         </div>
+
+        {/* Simple horizontal bar (tone only) */}
+        <div className="h-2 w-full max-w-md overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-800">
+          <div
+            className={cn(
+              "h-full rounded-full transition-all duration-500",
+              scan.risk_level === "low" && "bg-emerald-600 dark:bg-emerald-500",
+              scan.risk_level === "medium" && "bg-amber-600 dark:bg-amber-500",
+              scan.risk_level === "high" && "bg-orange-600 dark:bg-orange-500",
+              scan.risk_level === "critical" && "bg-red-600 dark:bg-red-500"
+            )}
+            style={{ width: `${Math.min(100, Math.max(5, scan.risk_score))}%` }}
+          />
+        </div>
+
         {isAiOk && (
-          <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+          <p className="text-xs text-neutral-500 dark:text-neutral-400">
             Reviewed by Gemini on masked text only
           </p>
         )}
@@ -244,9 +261,9 @@ export function ScanResultPanel({
 
       {/* AI Contextual Review Section */}
       {isAiOk && scan.ai_analysis && (
-        <div className="space-y-4 rounded-lg border border-neutral-100 bg-neutral-50/70 p-4 dark:border-neutral-800 dark:bg-neutral-800/40">
+        <div className="space-y-4 rounded-xl border border-neutral-200 bg-neutral-50/60 p-5 dark:border-neutral-800 dark:bg-neutral-800/30">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-neutral-200/80 pb-3 dark:border-neutral-700">
-            <p className="text-xs font-semibold uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
+            <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
               AI Contextual Analysis
             </p>
             <span
@@ -261,70 +278,51 @@ export function ScanResultPanel({
             </span>
           </div>
 
-          {/* Summary */}
-          {scan.ai_analysis.summary && (
-            <div className="space-y-1">
-              <p className="text-sm text-neutral-800 dark:text-neutral-200">
-                {scan.ai_analysis.summary}
-              </p>
-            </div>
-          )}
+          <p className="text-sm leading-relaxed text-neutral-800 dark:text-neutral-200">
+            {scan.ai_analysis.summary}
+          </p>
 
-          {/* Destination Assessment */}
           {scan.ai_analysis.destination_assessment && (
-            <div className="space-y-1">
-              <p className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
-                Destination Assessment
-              </p>
-              <p className="text-xs text-neutral-600 dark:text-neutral-400">
-                {scan.ai_analysis.destination_assessment}
-              </p>
+            <div className="text-xs text-neutral-600 dark:text-neutral-400">
+              <span className="font-semibold text-neutral-700 dark:text-neutral-300">
+                Destination notes:{" "}
+              </span>
+              {scan.ai_analysis.destination_assessment}
             </div>
           )}
 
-          {/* Recommended Actions */}
           {scan.ai_analysis.recommended_actions?.length > 0 && (
-            <div className="space-y-1.5">
-              <p className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
+            <div className="space-y-1.5 pt-1">
+              <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
                 Recommended Actions
               </p>
-              <ul className="list-disc space-y-1 pl-4 text-xs text-neutral-600 dark:text-neutral-400">
-                {scan.ai_analysis.recommended_actions.map((action, idx) => (
-                  <li key={idx}>{action}</li>
+              <ul className="space-y-1 text-xs text-neutral-700 dark:text-neutral-300">
+                {scan.ai_analysis.recommended_actions.map((act, i) => (
+                  <li key={i} className="flex items-start gap-2">
+                    <span className="mt-0.5 block h-1.5 w-1.5 shrink-0 rounded-full bg-[#2f5e3e]" />
+                    <span>{act}</span>
+                  </li>
                 ))}
               </ul>
             </div>
           )}
 
-          {/* AI Contextual Findings */}
           {aiFindings.length > 0 && (
-            <div className="space-y-2 pt-2">
-              <p className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
-                Contextual Risks Identified
+            <div className="space-y-2 pt-2 border-t border-neutral-200/80 dark:border-neutral-700">
+              <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+                AI Detected Risks ({aiFindings.length})
               </p>
               <div className="space-y-2">
-                {aiFindings.map((f, idx) => (
+                {aiFindings.map((f) => (
                   <div
-                    key={f.id || idx}
-                    className="rounded-md border border-neutral-200 bg-white p-2.5 text-xs dark:border-neutral-700 dark:bg-neutral-800"
+                    key={f.id}
+                    className="rounded-lg border border-neutral-200 bg-white p-3 text-xs dark:border-neutral-700 dark:bg-neutral-900"
                   >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-mono font-medium text-neutral-900 dark:text-neutral-100">
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono font-medium text-neutral-800 dark:text-neutral-200">
                         {f.placeholder}
                       </span>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-neutral-500">
-                          {CATEGORY_LABELS[f.category] ?? f.category}
-                        </span>
-                        <span
-                          className={cn(
-                            "rounded px-1.5 py-0.5 text-[10px] font-medium capitalize",
-                            SEVERITY_COLORS[f.severity] ?? "bg-neutral-100 text-neutral-700"
-                          )}
-                        >
-                          {f.severity}
-                        </span>
-                      </div>
+                      <span className="capitalize text-neutral-500">{f.severity}</span>
                     </div>
                     {f.reason && (
                       <p className="mt-1 text-neutral-600 dark:text-neutral-400">
@@ -339,47 +337,75 @@ export function ScanResultPanel({
         </div>
       )}
 
-      {/* Deterministic Findings */}
+      {/* Findings: tidy list with category, count and a severity badge */}
       {groupedDetector.size > 0 && (
-        <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-widest text-neutral-400">
-            Detected Sensitive Data
+        <div className="space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
+            Detected Sensitive Data ({detectorFindings.length})
           </p>
-          <ul className="space-y-1.5">
-            {Array.from(groupedDetector.entries()).map(([cat, items]) => (
-              <li key={cat} className="flex items-center justify-between text-sm">
-                <span className="text-neutral-700 dark:text-neutral-300">
-                  {CATEGORY_LABELS[cat] ?? cat}
-                </span>
-                <span className="font-medium tabular-nums text-neutral-900 dark:text-neutral-100">
-                  {items.length}
-                </span>
-              </li>
-            ))}
+          <ul className="divide-y divide-neutral-100 rounded-xl border border-neutral-200 bg-neutral-50/40 dark:divide-neutral-800 dark:border-neutral-800 dark:bg-neutral-900/40">
+            {Array.from(groupedDetector.entries()).map(([cat, items]) => {
+              const highestSeverity =
+                items.reduce((prev, curr) => {
+                  return severityOrder.indexOf(curr.severity) < severityOrder.indexOf(prev)
+                    ? curr.severity
+                    : prev;
+                }, "low") || "low";
+
+              return (
+                <li key={cat} className="flex items-center justify-between px-4 py-3 text-sm">
+                  <span className="font-medium text-neutral-800 dark:text-neutral-200">
+                    {CATEGORY_LABELS[cat] ?? cat}
+                  </span>
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={cn(
+                        "inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium capitalize",
+                        SEVERITY_COLORS[highestSeverity] ?? SEVERITY_COLORS.low
+                      )}
+                    >
+                      {highestSeverity}
+                    </span>
+                    <span className="min-w-6 text-right font-mono text-xs font-semibold tabular-nums text-neutral-600 dark:text-neutral-300">
+                      {items.length}
+                    </span>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}
 
-      {/* Masked Safe Text */}
+      {/* Masked Safe Text: Monospace box with Copy and Download buttons in its header */}
       {scan.masked_text !== undefined && (
-        <div className="space-y-2">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-xs font-semibold uppercase tracking-widest text-neutral-400">
+        <div className="overflow-hidden rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-neutral-200 bg-neutral-50/80 px-4 py-2.5 dark:border-neutral-800 dark:bg-neutral-800/60">
+            <span className="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
               Safe Text
-            </p>
+            </span>
             <div className="flex flex-wrap items-center gap-2">
               <button
+                type="button"
                 onClick={handleCopy}
-                className="rounded-md border border-neutral-200 px-3 py-1 text-xs font-medium text-neutral-600 transition-colors hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800"
+                className="inline-flex min-h-[40px] items-center rounded-md border border-neutral-300 bg-white px-3.5 py-1.5 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2f5e3e] focus-visible:ring-offset-2 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800"
               >
                 {copied ? "Copied" : "Copy safe text"}
               </button>
+              <button
+                type="button"
+                onClick={handleDownloadRedacted}
+                className="inline-flex min-h-[40px] items-center rounded-md border border-neutral-300 bg-white px-3.5 py-1.5 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2f5e3e] focus-visible:ring-offset-2 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800"
+              >
+                Download (.txt)
+              </button>
               {isDocument && (
                 <button
-                  onClick={handleDownloadRedacted}
-                  className="rounded-md border border-neutral-200 px-3 py-1 text-xs font-medium text-neutral-600 transition-colors hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800"
+                  type="button"
+                  onClick={handleDownloadReport}
+                  className="inline-flex min-h-[40px] items-center rounded-md border border-neutral-300 bg-white px-3.5 py-1.5 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2f5e3e] focus-visible:ring-offset-2 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800"
                 >
-                  Download redacted file (.txt)
+                  {reportDownloaded ? "Downloaded" : "Download report (.md)"}
                 </button>
               )}
             </div>
@@ -387,21 +413,9 @@ export function ScanResultPanel({
           <textarea
             readOnly
             value={scan.masked_text}
-            rows={6}
-            className="w-full resize-none rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 font-mono text-xs text-neutral-700 focus:outline-none dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300"
+            rows={7}
+            className="w-full resize-y border-0 bg-white p-4 font-mono text-xs leading-relaxed text-neutral-800 focus:outline-none dark:bg-neutral-900 dark:text-neutral-200"
           />
-        </div>
-      )}
-
-      {/* Download report — document scans only */}
-      {isDocument && (
-        <div className="flex justify-end border-t border-neutral-100 pt-4 dark:border-neutral-800">
-          <button
-            onClick={handleDownloadReport}
-            className="rounded-md border border-neutral-200 px-3 py-1.5 text-xs font-medium text-neutral-600 transition-colors hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800"
-          >
-            {reportDownloaded ? "Downloaded" : "Download report (.md)"}
-          </button>
         </div>
       )}
     </div>

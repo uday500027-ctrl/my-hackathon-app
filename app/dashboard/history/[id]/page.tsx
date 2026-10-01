@@ -51,17 +51,17 @@ export default async function ScanDetailPage({
       <div className="flex items-center justify-between gap-4">
         <Link
           href="/dashboard/history"
-          className="text-sm text-neutral-500 hover:underline"
+          className="inline-flex min-h-[40px] items-center text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2f5e3e] focus-visible:ring-offset-2 rounded dark:text-neutral-400 dark:hover:text-neutral-200"
         >
           &larr; Back to history
         </Link>
       </div>
 
       <div>
-        <h1 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+        <h1 className="font-serif text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
           {scan.title ?? "Scan result"}
         </h1>
-        <p className="mt-1 text-sm text-neutral-400">
+        <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
           {formatDate(scan.created_at)} &middot;{" "}
           {DESTINATION_LABELS[scan.destination as string] ?? scan.destination}
         </p>

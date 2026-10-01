@@ -138,6 +138,26 @@
   html {
     @apply font-sans;
   }
+
+  /* Forest-green focus-visible ring on every button, link, and input */
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible,
+  [role="button"]:focus-visible {
+    outline: 2px solid #2f5e3e !important;
+    outline-offset: 2px !important;
+  }
+}
+
+/* Hide scrollbar for clean horizontal scrolling */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* ── Landing page utilities ───────────────────────────────────────────────── */

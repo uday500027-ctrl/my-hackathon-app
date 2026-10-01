@@ -69,8 +69,12 @@ export default function InsightsPage() {
   const [error, setError] = useState("");
   const mounted = useIsMounted();
 
+  const [refreshKey, setRefreshKey] = useState(0);
+
   useEffect(() => {
     async function loadStats() {
+      setLoading(true);
+      setError("");
       try {
         const res = await fetch("/api/stats");
         const json = await res.json();
@@ -87,13 +91,13 @@ export default function InsightsPage() {
       }
     }
     loadStats();
-  }, []);
+  }, [refreshKey]);
 
   if (loading) {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+          <h1 className="font-serif text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
             Insights
           </h1>
           <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
@@ -120,21 +124,26 @@ export default function InsightsPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+          <h1 className="font-serif text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
             Insights
           </h1>
+          <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+            Aggregated patterns, risk severity trends, and detector statistics.
+          </p>
         </div>
         <div
           role="alert"
-          className="rounded-xl border border-red-200 bg-red-50 p-6 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-400"
+          className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-400"
         >
-          <p className="font-medium">Failed to load statistics</p>
-          <p className="mt-1 text-xs opacity-90">{error}</p>
+          <div>
+            <p className="font-medium">Failed to load statistics</p>
+            <p className="mt-0.5 text-xs opacity-90">{error}</p>
+          </div>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => window.location.reload()}
-            className="mt-4"
+            onClick={() => setRefreshKey((k) => k + 1)}
+            className="min-h-[40px] px-4 text-xs font-medium shrink-0"
           >
             Try again
           </Button>
@@ -147,21 +156,21 @@ export default function InsightsPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+          <h1 className="font-serif text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
             Insights
           </h1>
           <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
             Aggregated patterns, risk severity trends, and detector statistics.
           </p>
         </div>
-        <div className="rounded-xl border border-dashed border-neutral-300 bg-white p-12 text-center dark:border-neutral-700 dark:bg-neutral-900">
+        <div className="rounded-xl border border-dashed border-neutral-300 bg-white p-12 text-center shadow-none dark:border-neutral-700 dark:bg-neutral-900">
           <h2 className="text-base font-semibold text-neutral-800 dark:text-neutral-200">
             Run your first scan to see insights
           </h2>
           <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
             Once you perform text scans, risk trends, category breakdowns, and AI review percentages will appear here.
           </p>
-          <Button asChild className="btn-accent mt-4">
+          <Button asChild className="btn-accent mt-4 min-h-[40px] px-4 font-medium">
             <Link href="/dashboard">Run a scan</Link>
           </Button>
         </div>
@@ -192,9 +201,9 @@ export default function InsightsPage() {
     stats.byRiskLevel.critical || 1;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+        <h1 className="font-serif text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
           Insights
         </h1>
         <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">

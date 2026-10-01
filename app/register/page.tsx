@@ -53,13 +53,21 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-neutral-50 dark:bg-neutral-950 px-4">
-      <div className="w-full max-w-sm space-y-6">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[#f6f4ef] px-4 py-12 dark:bg-neutral-950">
+      {/* Wordmark linking to "/" */}
+      <Link
+        href="/"
+        className="font-serif text-2xl font-bold tracking-tight text-neutral-900 transition-colors hover:text-[#2f5e3e] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2f5e3e] focus-visible:ring-offset-2 rounded dark:text-neutral-100"
+      >
+        PasteGuard
+      </Link>
+
+      <div className="w-full max-w-sm rounded-xl border border-neutral-200 bg-white p-6 sm:p-8 shadow-none space-y-6 mt-6 dark:border-neutral-800 dark:bg-neutral-900">
         <div className="space-y-1 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight text-neutral-900 dark:text-neutral-100">
+          <h1 className="font-serif text-xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
             Create an account
           </h1>
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">
+          <p className="text-xs text-neutral-500 dark:text-neutral-400">
             Fill in the details below to get started
           </p>
         </div>
@@ -74,10 +82,10 @@ export default function RegisterPage() {
         )}
 
         <form onSubmit={handleSubmit} noValidate className="space-y-4">
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <label
               htmlFor="register-name"
-              className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
+              className="block text-xs font-medium text-neutral-700 dark:text-neutral-300"
             >
               Name
             </label>
@@ -92,7 +100,7 @@ export default function RegisterPage() {
               aria-describedby={
                 fieldErrors.name ? "register-name-error" : undefined
               }
-              className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:placeholder-neutral-500"
+              className="w-full min-h-[40px] rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#2f5e3e] dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder-neutral-500"
             />
             {fieldErrors.name && (
               <p
@@ -105,10 +113,10 @@ export default function RegisterPage() {
             )}
           </div>
 
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <label
               htmlFor="register-email"
-              className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
+              className="block text-xs font-medium text-neutral-700 dark:text-neutral-300"
             >
               Email
             </label>
@@ -123,7 +131,7 @@ export default function RegisterPage() {
               aria-describedby={
                 fieldErrors.email ? "register-email-error" : undefined
               }
-              className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:placeholder-neutral-500"
+              className="w-full min-h-[40px] rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#2f5e3e] dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder-neutral-500"
             />
             {fieldErrors.email && (
               <p
@@ -136,10 +144,10 @@ export default function RegisterPage() {
             )}
           </div>
 
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <label
               htmlFor="register-password"
-              className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
+              className="block text-xs font-medium text-neutral-700 dark:text-neutral-300"
             >
               Password
             </label>
@@ -154,7 +162,7 @@ export default function RegisterPage() {
               aria-describedby={
                 fieldErrors.password ? "register-password-error" : undefined
               }
-              className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:placeholder-neutral-500"
+              className="w-full min-h-[40px] rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#2f5e3e] dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder-neutral-500"
             />
             {fieldErrors.password && (
               <p
@@ -171,17 +179,17 @@ export default function RegisterPage() {
             id="register-submit"
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-neutral-500 disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-300"
+            className="w-full inline-flex min-h-[40px] items-center justify-center rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2f5e3e] focus-visible:ring-offset-2 disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-300"
           >
             {loading ? "Creating account…" : "Create account"}
           </button>
         </form>
 
-        <p className="text-center text-sm text-neutral-500 dark:text-neutral-400">
+        <p className="text-center text-xs text-neutral-500 dark:text-neutral-400">
           Already have an account?{" "}
           <Link
             href="/login"
-            className="font-medium text-neutral-900 underline-offset-4 hover:underline dark:text-neutral-100"
+            className="font-medium text-neutral-900 underline-offset-4 hover:underline dark:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2f5e3e] rounded"
           >
             Sign in
           </Link>
