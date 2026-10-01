@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@google/genai": "^2.25.0",
     "@splinetool/react-spline": "^4.1.0",
     "@splinetool/runtime": "^2.0.62",
     "@supabase/supabase-js": "^2.117.2",

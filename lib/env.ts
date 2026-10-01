@@ -58,10 +58,19 @@ export function getJwtEnv(): JwtEnv {
   return _jwtEnv;
 }
 
+// ─── Gemini env (optional — missing key falls back gracefully) ───────────────
+
+export function getGeminiEnv(): { GEMINI_API_KEY?: string; GEMINI_MODEL: string } {
+  return {
+    GEMINI_API_KEY: process.env.GEMINI_API_KEY?.trim() || undefined,
+    GEMINI_MODEL: process.env.GEMINI_MODEL?.trim() || "gemini-2.5-flash",
+  };
+}
+
 // ─── Combined (kept for any code that needs all three) ────────────────────────
 
 export function getEnv() {
-  return { ...getSupabaseEnv(), ...getJwtEnv() };
+  return { ...getSupabaseEnv(), ...getJwtEnv(), ...getGeminiEnv() };
 }
 
 /** Lazy proxy over the combined env — access any key, validated on first read. */

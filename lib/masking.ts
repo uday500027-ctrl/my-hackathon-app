@@ -1,11 +1,12 @@
 import type { Category, RawMatch, Severity } from "@/lib/detectors";
 
 export interface Finding {
-  id: string;          // e.g. "email_1"
-  category: Category;
-  placeholder: string; // e.g. "[EMAIL_1]"
+  id: string;          // e.g. "email_1" or "confidential_1"
+  category: Category | string;
+  placeholder: string; // e.g. "[EMAIL_1]" or "[CONFIDENTIAL_1]"
   severity: Severity;
-  source: "detector";
+  source: "detector" | "ai";
+  reason?: string;
   // NOTE: raw value is intentionally NOT stored here
 }
 

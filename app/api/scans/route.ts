@@ -22,6 +22,8 @@ const listSchema = z.object({
   risk_level: z.enum(["low", "medium", "high", "critical"]).optional(),
 });
 
+export const maxDuration = 30;
+
 // ─── POST /api/scans ──────────────────────────────────────────────────────────
 
 async function postHandler(req: Request): Promise<Response> {
@@ -96,7 +98,7 @@ async function postHandler(req: Request): Promise<Response> {
   }
 
   // ── Run pipeline (raw text is NEVER logged or stored) ────────────────────
-  const result = runScan(text, destination as Destination, {
+  const result = await runScan(text, destination as Destination, {
     enabled_categories: policy.enabled_categories as Category[],
     custom_terms: policy.custom_terms ?? [],
     strictness: policy.strictness as "relaxed" | "balanced" | "strict",
@@ -112,8 +114,8 @@ async function postHandler(req: Request): Promise<Response> {
       destination,
       masked_text: result.maskedText,
       findings: result.findings,
-      ai_status: "fallback",
-      ai_analysis: null,
+      ai_status: result.ai_status,
+      ai_analysis: result.ai_analysis,
       risk_score: result.riskScore,
       risk_level: result.riskLevel,
     })
@@ -125,7 +127,10 @@ async function postHandler(req: Request): Promise<Response> {
     return fail("internal_error", "Something went wrong. Please try again.", 500);
   }
 
-  return ok(scan);
+  return ok({
+    ...scan,
+    ...(result.ai_notice ? { ai_notice: result.ai_notice } : {}),
+  });
 }
 
 // ─── GET /api/scans ───────────────────────────────────────────────────────────
