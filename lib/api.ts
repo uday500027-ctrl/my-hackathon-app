@@ -14,16 +14,15 @@ export function fail(
 
 // ─── Handler wrapper ──────────────────────────────────────────────────────────
 
-type Handler = (req: Request) => Promise<Response>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Handler = (req: Request, ctx?: any) => Promise<Response>;
 
 export function withErrorHandler(handler: Handler): Handler {
-  return async (req: Request) => {
+  return async (req: Request, ctx?: unknown) => {
     try {
-      return await handler(req);
+      return await handler(req, ctx);
     } catch (err: unknown) {
       // Log full details server-side only — never send raw error to client.
-      // Config errors (missing env vars) get a distinct prefix so they're easy
-      // to spot in the terminal.
       const message =
         err instanceof Error ? err.message : String(err);
       const isConfigError =

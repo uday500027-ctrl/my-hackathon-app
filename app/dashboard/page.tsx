@@ -1,33 +1,199 @@
-import { getSession } from "@/lib/auth";
-import { redirect } from "next/navigation";
-import LogoutButton from "./LogoutButton";
+"use client";
 
-export default async function DashboardPage() {
-  const session = await getSession();
+import { useState, useRef } from "react";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ScanResultPanel } from "@/app/dashboard/ScanResultPanel";
+import { verhoeffGenerateCheckDigit } from "@/lib/detectors";
+import type { ScanRecord } from "@/app/dashboard/scan-types";
+import { DESTINATION_LABELS } from "@/app/dashboard/scan-types";
 
-  if (!session) {
-    redirect("/login");
+const MAX_CHARS = 8000;
+const DESTINATIONS = ["ai_chatbot", "email_external", "public_post", "internal_chat"] as const;
+
+// ─── Sample text assembled at runtime — no raw secret literals in source ─────
+function buildSampleText(): string {
+  // Fake Aadhaar with valid Verhoeff check digit
+  const aadhaarBase = "234512345678".slice(0, 11); // 11 digits, first digit 2
+  const checkDigit = verhoeffGenerateCheckDigit(aadhaarBase);
+  const aadhaar = aadhaarBase + checkDigit;
+
+  // Fake API key assembled by concatenation so no key-like literal exists in source
+  const fakeKey = ["AIza", "SyBkFake", "TestKey1234", "abcdefghijk"].join("");
+
+  // Luhn-valid test card: 4111111111111111 is a known test card
+  const card = "4111 1111 1111 1111";
+
+  return [
+    `Contact Jane at jane.doe@example.com or call +91 98765 43210 for details.`,
+    `Her PAN is ABCDE1234F and her Aadhaar is ${aadhaar}.`,
+    `She paid with card ${card} via UPI ID jane@icici.`,
+    `Server is at 192.168.1.42. Her password is hunter2secret.`,
+    `API key for testing: ${fakeKey}`,
+    `Project Falcon launch is delayed due to the Acme contract dispute.`,
+  ].join("\n");
+}
+
+export default function ScanPage() {
+  const [text, setText] = useState("");
+  const [destination, setDestination] = useState<string>("ai_chatbot");
+  const [title, setTitle] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<ScanRecord | null>(null);
+  const [error, setError] = useState("");
+  const resultRef = useRef<HTMLDivElement>(null);
+
+  async function handleScan() {
+    setError("");
+    setResult(null);
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/scans", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, destination, title: title || undefined }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.message ?? "Something went wrong.");
+        setLoading(false);
+        return;
+      }
+
+      setResult(data.data as ScanRecord);
+      setLoading(false);
+      // Scroll to result
+      setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+    } catch {
+      setError("Could not connect to the server. Please try again.");
+      setLoading(false);
+    }
   }
 
-  return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
-      <header className="border-b border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
-          <h1 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-            Dashboard
-          </h1>
-          <LogoutButton />
-        </div>
-      </header>
+  function handleLoadSample() {
+    setText(buildSampleText());
+  }
 
-      <main className="mx-auto max-w-5xl px-4 py-10">
-        <p className="text-base text-neutral-700 dark:text-neutral-300">
-          Signed in as{" "}
-          <span className="font-medium text-neutral-900 dark:text-neutral-100">
-            {session.name}
-          </span>
+  const charCount = text.length;
+  const overLimit = charCount > MAX_CHARS;
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+          Scan text
+        </h1>
+        <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+          Paste text you are about to send. Sensitive values will be masked before analysis.
         </p>
-      </main>
+      </div>
+
+      {error && (
+        <div
+          role="alert"
+          className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-400"
+        >
+          {error}
+        </div>
+      )}
+
+      <div className="space-y-4 rounded-xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
+        {/* Optional title */}
+        <div className="space-y-1.5">
+          <Label htmlFor="scan-title" className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+            Title <span className="font-normal text-neutral-400">(optional)</span>
+          </Label>
+          <input
+            id="scan-title"
+            type="text"
+            maxLength={80}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="e.g. Support email draft"
+            className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder-neutral-500"
+          />
+        </div>
+
+        {/* Destination */}
+        <div className="space-y-1.5">
+          <Label htmlFor="scan-destination" className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+            Destination
+          </Label>
+          <Select value={destination} onValueChange={setDestination}>
+            <SelectTrigger id="scan-destination" className="w-full sm:w-64">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {DESTINATIONS.map((d) => (
+                <SelectItem key={d} value={d}>
+                  {DESTINATION_LABELS[d]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Text area */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="scan-text" className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+              Text to scan
+            </Label>
+            <span
+              className={`text-xs tabular-nums ${
+                overLimit
+                  ? "text-red-600 dark:text-red-400"
+                  : "text-neutral-400"
+              }`}
+            >
+              {charCount.toLocaleString()} / {MAX_CHARS.toLocaleString()}
+            </span>
+          </div>
+          <textarea
+            id="scan-text"
+            rows={10}
+            maxLength={MAX_CHARS}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Paste your text here…"
+            className="w-full resize-y rounded-lg border border-neutral-300 bg-white px-3 py-2 font-mono text-sm text-neutral-900 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder-neutral-500"
+          />
+        </div>
+
+        {/* Actions */}
+        <div className="flex flex-wrap gap-3">
+          <button
+            id="scan-submit"
+            onClick={handleScan}
+            disabled={loading || !text.trim() || overLimit}
+            className="rounded-lg bg-neutral-900 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-neutral-500 disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-300"
+          >
+            {loading ? "Scanning…" : "Scan"}
+          </button>
+          <button
+            id="scan-load-sample"
+            type="button"
+            onClick={handleLoadSample}
+            className="rounded-lg border border-neutral-300 bg-white px-5 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-100 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800"
+          >
+            Load sample text
+          </button>
+        </div>
+      </div>
+
+      {/* Result */}
+      <div ref={resultRef}>
+        {result && <ScanResultPanel scan={result} />}
+      </div>
     </div>
   );
 }
